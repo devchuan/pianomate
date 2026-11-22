@@ -4,6 +4,24 @@
 
 旧版工具集合已移除，项目只保留新版学习主流程。
 
+## 界面预览
+
+> 截图与演示视频放在 `docs/screenshots/` 和 `docs/videos/`。把素材按下面的文件名放进去，README 会自动展示。
+
+| 曲谱库 | 五线谱跟弹 |
+| --- | --- |
+| ![曲谱库](docs/screenshots/01-library.png) | ![五线谱跟弹](docs/screenshots/02-staff.png) |
+
+| 简谱跟弹 | 演奏控制 |
+| --- | --- |
+| ![简谱跟弹](docs/screenshots/03-jianpu.png) | ![演奏控制](docs/screenshots/04-controls.png) |
+
+**跟弹演示视频**
+
+<video src="docs/videos/demo.mp4" controls width="720"></video>
+
+（如果视频不自动播放，可[点此下载观看](docs/videos/demo.mp4)。）
+
 ## 本期功能
 
 - **找谱**：内置无版权曲谱；支持站外聚合搜索，按来源优先级逐级降级，命中即停止。
