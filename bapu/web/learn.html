@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>琴伴 · 找到曲谱，跟着弹</title>
+  <link rel="stylesheet" href="/static/learn.css?v=20261122h">
+</head>
+<body>
+  <header class="site-header">
+    <div class="header-inner">
+      <a class="brand" href="/">
+        <span class="brand-mark">♫</span>
+        <span class="brand-name">琴伴</span>
+        <span class="brand-sub">PianoMate</span>
+      </a>
+      <nav>
+        <a href="#library">找曲谱</a>
+        <a href="#upload">上传曲谱</a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero">
+      <div class="hero-inner">
+        <p class="eyebrow">给自学钢琴的人</p>
+        <h1>找到喜欢的曲谱，<em>马上跟着弹</em></h1>
+        <p class="hero-desc">清晰的谱面、稳定的钢琴音色、跟着速度走的高亮提示。少折腾工具，多练琴。</p>
+        <div class="hero-search">
+          <input id="searchInput" type="search" placeholder="搜索曲名、作曲家或标签，例如：卡农、莫扎特、入门">
+          <button id="searchBtn" class="btn-primary">搜谱</button>
+        </div>
+        <div class="hero-tags" id="quickTags">
+          <button class="chip" data-query="入门">入门曲</button>
+          <button class="chip" data-query="古典">古典</button>
+          <button class="chip" data-query="肖邦">肖邦</button>
+          <button class="chip" data-query="巴赫">巴赫</button>
+          <button class="chip" data-query="中国">中国曲目</button>
+        </div>
+      </div>
+    </section>
+
+    <section id="library" class="section">
+      <div class="section-head">
+        <div>
+          <h2>从曲谱库开始</h2>
+          <p>内置无版权曲谱，点开就能看谱、听演奏。</p>
+        </div>
+        <span id="scoreCount" class="muted">加载中…</span>
+      </div>
+      <div id="scoreGrid" class="score-grid"></div>
+      <div class="more-row">
+        <div class="provider-row" id="providerRow">
+          <label><input type="checkbox" id="pLocal" checked> 本地曲谱库</label>
+          <label><input type="checkbox" id="pOpenScore"> OpenScore</label>
+          <label><input type="checkbox" id="pMutopia"> Mutopia</label>
+          <label><input type="checkbox" id="pImslp"> IMSLP</label>
+          <label><input type="checkbox" id="pMusopen"> Musopen</label>
+          <label><input type="checkbox" id="pPianoMidi"> Piano-MIDI</label>
+        </div>
+        <p class="muted small">外部来源只给页面链接，版权和下载请自行核对；本地曲谱可直接演奏。</p>
+      </div>
+    </section>
+
+    <section id="upload" class="section upload-section">
+      <div>
+        <h2>找不到？上传你自己的曲谱</h2>
+        <p>支持 MusicXML / MXL 曲谱，也支持 MIDI 文件直接演奏（保留真实力度与时值）。图片和 PDF 转谱正在打磨，先在下一期开放。</p>
+      </div>
+      <div class="upload-actions">
+        <button id="uploadBtn" class="btn-primary ghost">导入 MusicXML / MXL</button>
+        <input id="uploadInput" type="file" accept=".musicxml,.xml,.mxl,.mid,.midi" hidden>
+        <button class="btn-disabled" data-soon="图片转谱">图片转谱 · 二期</button>
+        <button class="btn-disabled" data-soon="PDF 转谱">PDF 转谱 · 二期</button>
+      </div>
+    </section>
+  </main>
+
+  <section id="practice" class="practice" hidden>
+    <div class="practice-top">
+      <button id="backBtn" class="btn-ghost">← 返回曲谱库</button>
+      <div class="practice-title">
+        <h2 id="practiceTitle">—</h2>
+        <p id="practiceMeta">—</p>
+      </div>
+      <div class="practice-actions">
+        <button id="editSoonBtn" class="btn-ghost" data-soon="曲谱编辑">编辑 · 二期</button>
+        <button id="downloadXmlBtn" class="btn-ghost">下载 MusicXML</button>
+        <button id="downloadPdfBtn" class="btn-ghost">下载 PDF</button>
+      </div>
+    </div>
+
+    <div class="practice-body">
+      <article class="score-paper">
+        <div class="paper-head">
+          <div>
+            <h3 id="paperTitle">—</h3>
+            <p id="paperMeta">—</p>
+          </div>
+          <span class="paper-badge">大谱表 · 简谱可切换</span>
+        </div>
+        <div class="tabs">
+          <button class="tab active" data-tab="staff">五线谱</button>
+          <button class="tab" data-tab="jianpu">简谱</button>
+        </div>
+        <div id="staffPanel" class="tab-panel active">
+          <div id="staffView" class="staff-view"></div>
+        </div>
+        <div id="jianpuPanel" class="tab-panel">
+          <div id="jianpuView" class="jianpu-view"></div>
+        </div>
+      </article>
+
+      <aside class="practice-side">
+        <div class="side-card">
+          <h3>本次练习</h3>
+          <p class="muted">点击曲谱信息栏的 ♩=60 可调整演奏速度，先慢速跟右手，再加左手。</p>
+          <label class="side-label">演奏声部
+            <select id="partSelect">
+              <option value="all" selected>双手</option>
+              <option value="0">右手</option>
+              <option value="1">左手</option>
+            </select>
+          </label>
+          <label class="side-label">音色
+            <select id="modeSelect">
+              <option value="piano" selected>本地钢琴</option>
+              <option value="voice">唱谱 do re mi</option>
+            </select>
+          </label>
+          <div class="tip-box">
+            <strong>练习建议</strong>
+            <p>把 ♩=60 调小（如 40）慢速听一遍，再逐步调回原速。音符和琴键会同步高亮。</p>
+          </div>
+        </div>
+      </aside>
+    </div>
+  </section>
+
+  <div id="playerDock" class="player-dock" hidden>
+    <div class="dock-inner">
+      <button id="playBtn" class="play-btn">▶</button>
+      <button id="stopBtn" class="stop-btn">■</button>
+      <div class="dock-time"><span id="currentTime">0:00</span> / <span id="totalTime">0:00</span></div>
+      <div class="dock-progress"><div id="progress" class="progress-fill"></div></div>
+      <label class="dock-volume">声音
+        <input id="volumeInput" type="range" min="0" max="100" value="80">
+      </label>
+    </div>
+    <div id="keyboard" class="keyboard"></div>
+  </div>
+
+  <div id="toast" class="toast" hidden></div>
+
+  <script src="/static/vendor/opensheetmusicdisplay.min.js?v=20261121f"></script>
+  <script src="/static/vendor/jianpurender.js?v=20261122a"></script>
+  <script src="/static/learn.js?v=20261122j"></script>
+</body>
+</html>

@@ -1,0 +1,166 @@
+[
+  {
+    "key": "致爱丽丝",
+    "title": "致爱丽丝（简化编配）",
+    "composer": "贝多芬",
+    "tonic": "Am",
+    "mode": "minor",
+    "meter": "3/4",
+    "tempo": 76,
+    "difficulty": "入门",
+    "tags": [
+      "古典",
+      "入门",
+      "独奏"
+    ],
+    "source": "local",
+    "file": "致爱丽丝.musicxml",
+    "note": "公有领域曲目，简化编配，仅供本地练习与演奏"
+  },
+  {
+    "key": "c大调前奏曲",
+    "title": "C大调前奏曲（简化编配）",
+    "composer": "巴赫",
+    "tonic": "C",
+    "mode": "major",
+    "meter": "4/4",
+    "tempo": 104,
+    "difficulty": "初级",
+    "tags": [
+      "巴洛克",
+      "古典",
+      "练习"
+    ],
+    "source": "local",
+    "file": "c大调前奏曲.musicxml",
+    "note": "公有领域曲目，简化编配，仅供本地练习与演奏"
+  },
+  {
+    "key": "土耳其进行曲",
+    "title": "土耳其进行曲（简化编配）",
+    "composer": "莫扎特",
+    "tonic": "Am",
+    "mode": "minor",
+    "meter": "4/4",
+    "tempo": 126,
+    "difficulty": "中级",
+    "tags": [
+      "古典",
+      "轻快",
+      "独奏"
+    ],
+    "source": "local",
+    "file": "土耳其进行曲.musicxml",
+    "note": "公有领域曲目，简化编配，仅供本地练习与演奏"
+  },
+  {
+    "key": "夜曲-op.9-no.2",
+    "title": "夜曲 Op.9 No.2（简化编配）",
+    "composer": "肖邦",
+    "tonic": "Eb",
+    "mode": "major",
+    "meter": "4/4",
+    "tempo": 66,
+    "difficulty": "中级",
+    "tags": [
+      "浪漫",
+      "夜曲",
+      "抒情"
+    ],
+    "source": "local",
+    "file": "夜曲-op.9-no.2.musicxml",
+    "note": "公有领域曲目，简化编配，仅供本地练习与演奏"
+  },
+  {
+    "key": "卡农",
+    "title": "卡农（简化编配）",
+    "composer": "帕赫贝尔",
+    "tonic": "D",
+    "mode": "major",
+    "meter": "4/4",
+    "tempo": 84,
+    "difficulty": "初级",
+    "tags": [
+      "巴洛克",
+      "婚礼",
+      "经典"
+    ],
+    "source": "local",
+    "file": "卡农.musicxml",
+    "note": "公有领域曲目，简化编配，仅供本地练习与演奏"
+  },
+  {
+    "key": "欢乐颂",
+    "title": "欢乐颂（简化编配）",
+    "composer": "贝多芬",
+    "tonic": "C",
+    "mode": "major",
+    "meter": "4/4",
+    "tempo": 124,
+    "difficulty": "入门",
+    "tags": [
+      "古典",
+      "合唱",
+      "入门"
+    ],
+    "source": "local",
+    "file": "欢乐颂.musicxml",
+    "note": "公有领域曲目，简化编配，仅供本地练习与演奏"
+  },
+  {
+    "key": "茉莉花",
+    "title": "茉莉花（简化编配）",
+    "composer": "中国民歌",
+    "tonic": "C",
+    "mode": "major",
+    "meter": "4/4",
+    "tempo": 92,
+    "difficulty": "入门",
+    "tags": [
+      "中国",
+      "民歌",
+      "入门"
+    ],
+    "source": "local",
+    "file": "茉莉花.musicxml",
+    "note": "公有领域曲目，简化编配，仅供本地练习与演奏"
+  },
+  {
+    "key": "月光奏鸣曲-第一乐章",
+    "title": "月光奏鸣曲 第一乐章（简化编配）",
+    "composer": "贝多芬",
+    "tonic": "C#m",
+    "mode": "minor",
+    "meter": "4/4",
+    "tempo": 58,
+    "difficulty": "中级",
+    "tags": [
+      "古典",
+      "慢板",
+      "抒情"
+    ],
+    "source": "local",
+    "file": "月光奏鸣曲-第一乐章.musicxml",
+    "note": "公有领域曲目，简化编配，仅供本地练习与演奏"
+  },
+  {
+    "key": "穿越时空的思念",
+    "title": "穿越时空的思念",
+    "composer": "失落帝国（采集：爱给网）",
+    "tonic": "C",
+    "mode": "major",
+    "meter": "4/4",
+    "tempo": 60,
+    "difficulty": "中级",
+    "tags": [
+      "验证",
+      "钢琴",
+      "MIDI",
+      "穿越时空的思念"
+    ],
+    "source": "local",
+    "format": "midi",
+    "file": "穿越时空的思念.mid",
+    "note": "内置验证曲谱：穿越时空的思念（C调演奏MIDI），2026-11-22 从下载目录导入"
+  }
+]

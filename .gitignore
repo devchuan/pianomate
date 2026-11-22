@@ -1,0 +1,26 @@
+# Python 虚拟环境（约 1.3GB，不提交）
+.venv-omr/
+.venv/
+venv/
+env/
+
+# Python 缓存
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# 临时诊断/分析脚本
+_tmp_*.py
+_diag_*.html
+*.log
+
+# 编辑器与系统
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+*.tmp
+
+# pip 缓存
+.pip-cache/
