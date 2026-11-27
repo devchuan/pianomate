@@ -35,13 +35,15 @@ const player = {
   salamanderBases: {},
   pedalEvents: [],
   softPedalEvents: [],
-  jpRenderers: [],
-  JP_ACTIVE_KEY: Symbol("jpActiveKey"),
+  jpEngine: null,
+  jpDirty: false,
+  jpRenderedWidth: 0,
 };
 
 const SHARP_NAMES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
 const FLAT_NAMES = ["C", "Db", "D", "Eb", "E", "F", "Gb", "G", "Ab", "A", "Bb", "B"];
 const LETTER_INDEX = { C: 0, D: 1, E: 2, F: 3, G: 4, A: 5, B: 6 };
+const SEMITONE_INDEX = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 };
 const FLAT_KEYS = ["F", "Bb", "Eb", "Ab", "Db", "Gb"];
 const WHITE_PCS = [0, 2, 4, 5, 7, 9, 11];
 const LOOKAHEAD = 0.18;
@@ -110,7 +112,7 @@ function nameToPc(name) {
   let offset = 0;
   if (clean.includes("#")) offset = 1;
   if (clean.includes("b")) offset = -1;
-  return ((LETTER_INDEX[base] ?? 0) + offset + 12) % 12;
+  return ((SEMITONE_INDEX[base] ?? 0) + offset + 12) % 12;
 }
 
 function isMinor(mode) {
@@ -135,13 +137,20 @@ function midiToDegree(midi, tonic, mode) {
   const root = nameToPc(tonic);
   const steps = scaleSteps(mode);
   const interval = (((midi % 12) - root) % 12 + 12) % 12;
+  // 与后端 theory.py 保持一致：小调特征音(3/8/10)倾向降号，其余倾向升号（如小调导音 #7）
+  const preferredSign = [3, 8, 10].includes(interval) ? -1 : 1;
   let best = 0;
   let bestDiff = 99;
+  let bestPrefPenalty = 99;
   for (let i = 0; i < 7; i++) {
     let diff = (interval - steps[i] + 12) % 12;
     if (diff > 6) diff -= 12;
-    if (Math.abs(diff) < Math.abs(bestDiff)) {
+    const prefPenalty = (diff === 0 || (diff > 0) === (preferredSign > 0)) ? 0 : 1;
+    const absDiff = Math.abs(diff);
+    const bestAbs = Math.abs(bestDiff);
+    if (absDiff < bestAbs || (absDiff === bestAbs && prefPenalty < bestPrefPenalty)) {
       bestDiff = diff;
+      bestPrefPenalty = prefPenalty;
       best = i;
     }
   }
@@ -470,110 +479,50 @@ function renderFallbackStaff(score) {
   host.appendChild(svg);
 }
 
+function isJianpuPanelVisible() {
+  const panel = $("jianpuPanel");
+  const host = $("jianpuView");
+  return Boolean(panel && panel.classList.contains("active") && host && host.clientWidth > 0);
+}
+
 function renderJianpu(score) {
   const host = $("jianpuView");
-  host.innerHTML = "";
-  player.jpRenderers.forEach(({ inst }) => { try { inst && inst.destroy && inst.destroy(); } catch (_) {} });
-  player.jpRenderers = [];
-  const RC = window.jr && window.jr.JianpuSVGRender;
-  const events = sortedEvents(score);
-  const maxMeasure = events.reduce((max, event) => Math.max(max, event.measure || 0), 0);
-  const key = (typeof nameToPc === "function") ? nameToPc(score.tonic) : 0;
-  const beats = Math.max(1, score.beats_per_measure || 4);
-  const beatUnit = Math.max(1, score.beat_unit || 4);
-  const tempo = Math.max(1, score.tempo || 120);
-
-  // MIDI 的真实 start_beat 含大量不规则间隙，直接喂给库会被补成满屏休止符。
-  // 简谱靠"数字+时值线"表达节奏，这里把音符按序号连续铺排（start=前一个的结束），
-  // 并截断超长音，得到干净的标准简谱；高亮仍用 _event 绑定真实音符。
-  const makeNotes = (list) => {
-    let cursor = 0;
-    return list.filter(hasMidi).map((event) => {
-      const length = clampNumber(Number(event.beats) || 0.125, 0.125, 4);
-      const note = {
-        start: cursor,
-        length,
-        pitch: Number(event.midi),
-        intensity: clampNumber(Number(event.velocity) || 0.8, 0.2, 1),
-        _event: event,
-      };
-      cursor += length;
-      return note;
-    });
-  };
-
-  // 每行按音符数自适应分行（库每个音符约 95px），使自然宽度贴合容器：不拉伸、不滚动、不重叠。
-  const available = Math.max(400, (host.clientWidth || 1046) - 60);
-  const maxNotesPerLine = Math.max(4, Math.floor(available / 95));
-  const eventsByMeasure = new Map();
-  events.forEach((event) => {
-    const m = event.measure || 0;
-    if (!eventsByMeasure.has(m)) eventsByMeasure.set(m, []);
-    eventsByMeasure.get(m).push(event);
-  });
-  const lines = [];
-  let current = [];
-  let currentCount = 0;
-  for (let m = 0; m <= maxMeasure; m += 1) {
-    const measureEvents = eventsByMeasure.get(m) || [];
-    const count = measureEvents.filter(hasMidi).length;
-    if (current.length && currentCount + count > maxNotesPerLine) {
-      lines.push(current);
-      current = [];
-      currentCount = 0;
-    }
-    current = current.concat(measureEvents);
-    currentCount += count;
+  if (player.jpEngine) {
+    player.jpEngine.destroy();
   }
-  if (current.length) lines.push(current);
-
-  lines.forEach((lineEvents) => {
-    const row = document.createElement("div");
-    row.className = "jp-line";
-    const canvas = document.createElement("div");
-    canvas.className = "jp-canvas";
-    row.appendChild(canvas);
-    host.appendChild(row);
-    if (!RC || !lineEvents.length) return;
-    try {
-      const info = {
-        notes: makeNotes(lineEvents),
-        keySignatures: [{ start: 0, key }],
-        timeSignatures: [{ start: 0, numerator: beats, denominator: beatUnit }],
-        tempos: [{ start: 0, qpm: tempo }],
-      };
-      const inst = new RC(info, {
-        noteHeight: 20,
-        noteColor: "#1f2430",
-        activeNoteColor: "#1971c2",
-        showBarNumbers: false,
-        showTempoMarking: false,
-      }, canvas);
-      player.jpRenderers.push({ inst, notes: info.notes });
-    } catch (error) {
-      console.warn("简谱渲染失败，跳过该行", error);
-    }
-  });
+  if (!score) {
+    host.innerHTML = "";
+    player.jpDirty = false;
+    return;
+  }
+  // 面板隐藏时跳过渲染，切到简谱标签页且容器尺寸就绪后再排版，避免宽度误判
+  if (!isJianpuPanelVisible()) {
+    host.innerHTML = "";
+    player.jpDirty = true;
+    player.jpRenderedWidth = 0;
+    return;
+  }
+  if (!window.JianpuSvgEngine) return;
+  if (!player.jpEngine) {
+    player.jpEngine = new window.JianpuSvgEngine.JianpuRenderer(host, {
+      midiToDegree,
+      isMinor,
+    });
+  }
+  player.jpEngine.render(score, $("partSelect").value);
+  player.jpDirty = false;
+  player.jpRenderedWidth = host.clientWidth;
 }
 
 function highlightJianpu(beat) {
+  if (!player.jpEngine || !isJianpuPanelVisible()) return;
   const sounding = new Set();
   player.sorted.forEach((event) => { if (isSounding(event, beat)) sounding.add(event); });
-  player.jpRenderers.forEach((entry) => {
-    const note = entry.notes.find((item) => item._event && sounding.has(item._event));
-    const key = note ? `${note.start}|${note.pitch}` : null;
-    if (key === entry[player.JP_ACTIVE_KEY]) return;
-    entry[player.JP_ACTIVE_KEY] = key;
-    try { entry.inst.redraw(note || undefined, false); } catch (_) {}
-  });
+  player.jpEngine.updateHighlight(sounding);
 }
 
 function clearJianpuHighlight() {
-  player.jpRenderers.forEach((entry) => {
-    if (entry[player.JP_ACTIVE_KEY] == null) return;
-    entry[player.JP_ACTIVE_KEY] = null;
-    try { entry.inst.redraw(undefined, false); } catch (_) {}
-  });
+  if (player.jpEngine) player.jpEngine.clearHighlight();
 }
 
 function buildKeyboard(score) {
@@ -1307,7 +1256,7 @@ function updatePlayVisual() {
       node.setAttribute("opacity", isSounding(event, player.beat) ? 0.42 : 0);
     });
   }
-  if (player.jpRenderers.length) highlightJianpu(player.beat);
+  if (player.jpEngine) highlightJianpu(player.beat);
 
   const lit = new Set();
   player.sorted.forEach((event) => {
@@ -1373,6 +1322,7 @@ async function startPlayback() {
   }
   if ($("modeSelect").value === "voice" && $("partSelect").value === "all") {
     $("partSelect").value = "0";
+    renderJianpu(state.score);
     toast("唱谱模式按单声部演唱，已切换到右手");
   }
   const events = playableEvents();
@@ -1480,6 +1430,8 @@ function applyTempo(value) {
   document.querySelectorAll("[data-tempo-input]").forEach((input) => {
     if (String(next) !== input.value) input.value = String(next);
   });
+  const jpTempoEl = document.querySelector("#jianpuView [data-jp-tempo]");
+  if (jpTempoEl) jpTempoEl.textContent = `♩=${next}`;
   $("totalTime").textContent = fmtTime(player.durationBeats / beatsPerSecond());
   if (player.status === "playing") updatePlayVisual();
 }
@@ -1669,12 +1621,40 @@ function bindEvents() {
       document.querySelectorAll(".tab-panel").forEach((item) => item.classList.remove("active"));
       tab.classList.add("active");
       $(tab.dataset.tab + "Panel").classList.add("active");
+      if (tab.dataset.tab === "jianpu" && state.score) {
+        const host = $("jianpuView");
+        if (player.jpDirty || !player.jpEngine || Math.abs(host.clientWidth - player.jpRenderedWidth) > 12) {
+          renderJianpu(state.score);
+        }
+        if (player.status === "playing" || player.status === "paused") {
+          highlightJianpu(player.beat);
+        }
+      }
     });
   });
+
+  if (typeof ResizeObserver === "function") {
+    let jpResizeTimer = null;
+    const ro = new ResizeObserver(() => {
+      if (!state.score || !isJianpuPanelVisible()) return;
+      const host = $("jianpuView");
+      if (Math.abs(host.clientWidth - player.jpRenderedWidth) <= 12) return;
+      if (jpResizeTimer) clearTimeout(jpResizeTimer);
+      jpResizeTimer = setTimeout(() => {
+        if (!state.score || !isJianpuPanelVisible()) return;
+        renderJianpu(state.score);
+        if (player.status === "playing" || player.status === "paused") {
+          highlightJianpu(player.beat);
+        }
+      }, 120);
+    });
+    ro.observe($("jianpuView"));
+  }
 
   $("partSelect").addEventListener("change", () => {
     stopPlayback();
     if ($("modeSelect").value === "voice") $("partSelect").value = "0";
+    if (state.score) renderJianpu(state.score);
   });
   $("modeSelect").addEventListener("change", stopPlayback);
   $("playBtn").addEventListener("click", togglePlayback);
